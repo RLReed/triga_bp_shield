@@ -6,45 +6,27 @@ User desired parameters can be altered near the bottom of the code.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import subprocess
 import os
 
 #create output folder
 #try:
-os.mkdir('output')
+#os.mkdir('output')
 #except OSError,e:
 #    print e
 
 #numbering
+#  0 Void
 #  1 Air      2 Borated Polyethylene
 #  3 Aluminum 4 Lead
 #  5 Tungsten 6 Cadmium
 #  n neutron  p photon
 
-def density(material):
-    if (material == 1): return 0.001293
-    if (material == 2): return 1.000
-    if (material == 3): return 2.699
-    if (material == 4): return 11.34
-    if (material == 5): return 19.3
-    if (material == 6): return 8.65
+density = [0.0, 0.001293, 1.000, 2.699, 11.34, 19.3, 8.65]
+label = ['VOID', 'Air', 'Borated Polyethylene', 'Aluminum', 'Lead', 'Tungsten', 'Cadmium']
+abrev = ['VOID', 'air', 'bp', 'al', 'pb', 'w', 'cd']
 
-def label(material):
-    if (material == 1): return 'Air'
-    if (material == 2): return 'Borated Polyethylene'
-    if (material == 3): return 'Aluminum'
-    if (material == 4): return 'Lead'
-    if (material == 5): return 'Tungsten'
-    if (material == 6): return 'Cadmium'
-
-def abrev(material):
-    if (material == 1): return 'air'
-    if (material == 2): return 'bp'
-    if (material == 3): return 'al'
-    if (material == 4): return 'pb'
-    if (material == 5): return 'w'
-    if (material == 6): return 'cd'
-
-def Block1(material, density, label):
+def Block1(blocks):
     '''
     This function creates the cell cards for the shielding problem
     The only parameters that this program changes are for cell 21, where the material
@@ -66,36 +48,43 @@ def Block1(material, density, label):
     H += '12 2 -1.0       11 -12  21 -22            $ Borated Poly Collimator\n'
     H += '13 3 -2.699     11 -12  22 -23            $ NEBP Aluminum Case\n'
     H += 'c \n'
-    H += '21 {} -{}     -31                        ${} Brick\n'.format(material, density, label)
+    for i, mat in enumerate(blocks):
+        H += '{} {} -{} 120 -121 122 -123 {} -{}  $ Brick of {}\n'.format(200 + i, mat, density[mat], 12 if i == 0 else 130 + i, 131 + i, abrev[mat])
     H += 'c \n'
     H += '31 1 -0.001239  41 -32     -21        $ Detector Cell\n'
-    H += 'c \n'
-    H += '90 1 -0.001239 -32 #11 #12 #13 #21 #31    $ Problem Space\n'
+    H += 'c Define Problem space cell\n'
+    H += '90 1 -0.001239 -32 #11 #12 #13 (-12:-120:121:-122:123:{}) #31\n'.format(130 + len(blocks))
     H += '99 0            32                        $ Graveyard (RIP IN PEACE)\n'
     H += '\n'
     return H
 
-def Block2(dist, label):
+def Block2(blocks):
     H = ''
     H += 'c  *********************************************************\n'
     H += 'c                           BLOCK 2\n'
     H += 'c  *********************************************************\n'
     H += 'c  _____Problem Planes\n'
     H += '11  PX  -36.015          $ Collimator Front Plane\n'
-    H += '12  PX   -0.0001         $ Collimator Back Plane\n'
+    H += '12  PX   0               $ Collimator Back Plane\n'
     H += 'c  _____Cylinders\n'
     H += '21  CX   1.27            $ Cavity Cylinder\n'
     H += '22  CX   7.62            $ Borated Poly Cylinder\n'
     H += '23  CX   8.255           $ Aluminum Case Cylinder\n'
     H += 'c  _____Rectangular Parallelepiped\n'
-    H += '31  RPP     0.0001  {}      -10   10      -10  10    $ {} Brick\n'.format(dist + 0.0001, label)
+    H += '120 PZ -10\n'
+    H += '121 PZ 10\n'
+    H += '122 PY -10\n'
+    H += '123 PY 10\n'
+    for i, mat in enumerate(blocks):
+        H += '{} PX {} $ Brick of {}\n'.format(131 + i, 1 + i+.0001, abrev[mat]) 
     H += '32  RPP    -40 101             -11   11      -11  11    $ Problem Space\n'
     H += 'c  _____Detector Planes\n'
-    H += '41  PX    {}         $ Detector Front Plane\n'.format(dist + 0.00011)
+    H += '41 PX {}\n'.format(len(blocks) + .0002)
     H += '\n'
     return H
 
-def Block3(particle, nps):
+def Block3(particle, blocks):
+    nps = 1000000
     H = ''
     H += 'c  *********************************************************\n'
     H += 'c                           BLOCK 3\n'
@@ -107,11 +96,13 @@ def Block3(particle, nps):
     if particle == 'p': H += 'MODE p\n'
     H += 'NPS {}\n'.format(nps)
     H += 'PRINT 110\n'
+    #H += 'phys:p J J J 1 \n'
     H += 'c  ---------------------------------------------------------\n'
     H += 'c                        IMPORTANCES\n'
     H += 'c  ---------------------------------------------------------\n'
-    if particle == 'n': H += 'IMP:n 1 1 1 1 1 1 0\n'
-    if particle == 'n' or particle == 'p': H += 'IMP:p 1 1 1 1 1 1 0\n'
+    if particle == 'n': 
+        H += 'IMP:n 1 {}r 0\n'.format(4 + len(blocks))
+    H += 'IMP:p 1 {}r 0\n'.format(4 + len(blocks))
     H += 'c  ---------------------------------------------------------\n'
     H += 'c                      MATERIAL CARDS\n'
     H += 'c  ---------------------------------------------------------\n'
@@ -204,40 +195,59 @@ def Tally(particle):
     H += '\n'
     return H
 
-def Name(abrev, particle, distance):
-    return '{}{}{}.i'.format(abrev, particle, distance)
+def remove(filename):
+    try:
+        os.remove(filename)
+    except OSError:
+        pass
+        
+def readTotalGamma(filename):
+    f = open(filename).readlines()
+    for i, line in enumerate(f):
+        if '1tally       21' in line:
+            number = float(f[i+10].split()[0])
+    return number
 
-def npsCalc(dd):
-    return int(dd * 1.5E6)
-
+def name(blocks):
+    s = ''
+    for b in blocks:
+        s += '{}'.format(b)
+    return s
 
 #here you'll input all of the parameter you want to create the input files you need
 #particle types
-part = ['n', 'p']
-#materials you want files for
-mate = [1, 2, 3, 4, 5, 6]
-#shield thicknesses (cm)
-dist = [1, 2, 3, 4, 6, 8, 10, 15, 20, 25, 30]
+part = ['p']
+
+allBlocks = [[1,2,3,4]]
+             
 
 #this will loop through the above lists to create the desired mcnp input files
-for par in part:
-    for mat in mate:
-        for dis in dist:            
-            den = density(mat)
-            abr = abrev(mat)
-            lab = label(mat)
-            #the next line will title the mcnp input file
-            s = 'TRIGA BEAMPORT {} Shield, Thickness {}, {}\n'.format(lab, dis, par)
-            #calls the Block1 function to produce cell cards for input file            
-            s += Block1(mat, den, lab)
-            #write surface cards            
-            s += Block2(dis, lab)
-            #write information in Block 3            
-            s += Block3(par, npsCalc(dis))
-            s += Source(par)
-            s += Tally(par)
-            #give the file a name
-            name = Name(abr, par, dis)
-            #create file in output folder and write to file
-            with open('output/{}'.format(name), 'w') as H:
-                H.write(s)
+for blocks in allBlocks:
+    for par in part:
+        #the next line will title the mcnp input file
+        s = 'TRIGA BEAMPORT {} Shield, Thickness {}\n'.format(name(blocks), len(blocks))
+        #calls the Block1 function to produce cell cards for input file            
+        s += Block1(blocks)
+        #write surface cards            
+        s += Block2(blocks)
+        #write information in Block 3            
+        s += Block3(par, blocks)
+        s += Source(par)
+        s += Tally(par)
+        #give the file a name
+        fname = 'mat{}{}.i'.format(name(blocks), par) 
+        # Remove any files already present with the same name
+        remove('output/{}'.format(fname))
+        remove('output/{}o'.format(fname))
+        remove('output/{}r'.format(fname))
+        #create file in output folder and write to file
+        with open('output/{}'.format(fname), 'w') as H:
+            H.write(s)
+        subprocess.call('mcnp6 name=output/{}'.format(fname), shell=True)
+        
+        if par == 'p':
+            total_gamma = readTotalGamma('output/{}o'.format(fname))
+        
+        
+        
+        

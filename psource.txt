@@ -1,7 +1,7 @@
 c  ---------------------------------------------------------
 c                    SOURCE SPECIFICATIONS
 c  ---------------------------------------------------------
-SDEF POS=0 0 0 AXS=1 0 0 EXT=0 VEC=1 0 0 ERG=D3 DIR=FERG=D5 RAD=D6 PAR=2
+SDEF POS=-.001 0 0 AXS=1 0 0 EXT=0 VEC=1 0 0 ERG=D3 DIR=FERG=D5 RAD=D6 PAR=2
         WGT=20.2523241443
 SI6   0  1.27
 SP6 -21  1
