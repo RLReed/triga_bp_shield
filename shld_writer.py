@@ -22,9 +22,9 @@ import os
 #  5 Tungsten 6 Cadmium
 #  n neutron  p photon
 
-density = [0.0, 0.001293, 1.000, 2.699, 11.34, 19.3, 8.65]
-label = ['VOID', 'Air', 'Borated Polyethylene', 'Aluminum', 'Lead', 'Tungsten', 'Cadmium']
-abrev = ['VOID', 'air', 'bp', 'al', 'pb', 'w', 'cd']
+density = [0.0, 1.000, 11.34, 19.3,]
+label = ['VOID', 'Borated Polyethylene', 'Lead', 'Tungsten']
+abrev = ['VOID', 'bp', 'pb', 'w']
 
 def Block1(blocks):
     '''
@@ -58,7 +58,7 @@ def Block1(blocks):
     H += '\n'
     return H
 
-def Block2(blocks):
+def Block2(blocks, width):
     H = ''
     H += 'c  *********************************************************\n'
     H += 'c                           BLOCK 2\n'
@@ -76,15 +76,15 @@ def Block2(blocks):
     H += '122 PY -10\n'
     H += '123 PY 10\n'
     for i, mat in enumerate(blocks):
-        H += '{} PX {} $ Brick of {}\n'.format(131 + i, 1 + i+.0001, abrev[mat]) 
+        H += '{} PX {} $ Brick of {}\n'.format(131 + i, width * (i + 1) + .0001, abrev[mat]) 
     H += '32  RPP    -40 101             -11   11      -11  11    $ Problem Space\n'
     H += 'c  _____Detector Planes\n'
-    H += '41 PX {}\n'.format(len(blocks) + .0002)
+    H += '41 PX {}\n'.format(len(blocks)*width + .0002)
     H += '\n'
     return H
 
 def Block3(particle, blocks):
-    nps = 1000000
+    nps = 100000
     H = ''
     H += 'c  *********************************************************\n'
     H += 'c                           BLOCK 3\n'
@@ -108,46 +108,47 @@ def Block3(particle, blocks):
     H += 'c  ---------------------------------------------------------\n'
     H += 'c  ---------------------------------------------------------\n'
     H += 'c \n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'c  MATERIAL 1:      AIR  \n'
-    H += 'c  ------------------------(density 0.001293 g/cm^3)--------\n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'M1    7014 -0.7558\n'
-    H += '      8016 -0.2314\n'
-    H += '     18040 -0.0128\n'
-    H += 'c \n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'c  MATERIAL 2:      BORATED POLYETHYLENE\n'
-    H += 'c  ---------------------------(density 1.000 g/cm^3)--------\n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'M2     1001     -0.125355\n'
-    H += '       5010.70c -0.100000\n'
-    H += '       6000     -0.774645\n'
-    H += 'c \n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'c  MATERIAL 3:      ALUMINUM \n'
-    H += 'c  ---------------------------(density 2.699 g/cm^3)--------\n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'M3    13027.70c -1.0\n'
-    H += 'c \n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'c  MATERIAL 4:      LEAD  \n'
-    H += 'c  ---------------------------(density 11.34 g/cm^3)--------\n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'M4   82207.70c   -1.0\n'
-    H += 'c \n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'c  MATERIAL 5:      TUNGSTEN   \n'
-    H += 'c  ---------------------------(density 19.3 g/cm^3)---------\n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'M5   074184   -1.0\n'
-    H += 'c \n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'c  MATERIAL 6:      CADMIUM\n'
-    H += 'c  ---------------------------(density 8.65 g/cm^3)---------\n'
-    H += 'c  ---------------------------------------------------------\n'
-    H += 'M6   048112   -1.0\n'
-    H += 'c \n'
+    for i, ab in enumerate(abrev):
+        H += 'c  ---------------------------------------------------------\n'
+        if ab == 'air':
+            H += 'c  MATERIAL {}:      AIR  \n'.format(i)
+            H += 'c  ------------------------(density 0.001293 g/cm^3)--------\n'
+            H += 'M{}    7014 -0.7558\n'.format(i)
+            H += '      8016 -0.2314\n'
+            H += '     18040 -0.0128\n'
+            H += 'c \n'
+        elif ab == 'bp':
+            H += 'c  MATERIAL {}:      BORATED POLYETHYLENE\n'.format(i)
+            H += 'c  ---------------------------(density 1.000 g/cm^3)--------\n'
+            H += 'M{}     1001     -0.125355\n'.format(i)
+            H += '       5010.70c -0.100000\n'
+            H += '       6000     -0.774645\n'
+            H += 'c \n'
+        elif ab == 'al':
+            H += 'c  MATERIAL {}:      ALUMINUM \n'.format(i)
+            H += 'c  ---------------------------(density 2.699 g/cm^3)--------\n'
+            H += 'M{}    13027.70c -1.0\n'.format(i)
+            H += 'c \n'
+        elif ab == 'pb':
+            H += 'c  MATERIAL {}:      LEAD  \n'.format(i)
+            H += 'c  ---------------------------(density 11.34 g/cm^3)--------\n'
+            H += 'M{}   82207.70c   -1.0\n'.format(i)
+            H += 'c \n'
+        elif ab == 'w':
+            H += 'c  MATERIAL {}:      TUNGSTEN   \n'.format(i)
+            H += 'c  ---------------------------(density 19.3 g/cm^3)---------\n'
+            H += 'M{}   074184   -1.0\n'.format(i)
+            H += 'c \n'
+        elif ab == 'cd':
+            H += 'c  MATERIAL {}:      CADMIUM\n'.format(i)
+            H += 'c  ---------------------------(density 8.65 g/cm^3)---------\n'
+            H += 'M{}   048112   -1.0\n'.format(i)
+            H += 'c \n'
+        elif ab == 'fe':
+            H += 'c  MATERIAL {}:      Iron\n'.format(i)
+            H += 'c  ---------------------------(density 7.874 g/cm^3)---------\n'
+            H += 'M{}   026000   -1.0\n'.format(i)
+            H += 'c \n'
     return H
 
 def Source(particle):
@@ -169,44 +170,40 @@ def Tally(particle):
         H += 'E11   0.0 0.5 20\n'
     H += 'F21:p 41\n'
     H += 'FS21  21\n'
-    if particle == 'n':
-        H += 'F31:n 41\n'
-        H += 'FS31  21\n'
-        H += 'E31    0.00000e+00 1.00000e-11 1.50000e-08 3.00000e-08\n'
-        H += '       5.00000e-08 8.00000e-08 1.00000e-07 1.40000e-07\n'
-        H += '       1.80000e-07 2.50000e-07 3.20000e-07 4.00000e-07\n'
-        H += '       6.25000e-07 8.50000e-07 9.50000e-07 9.72000e-07\n'
-        H += '       1.02000e-06 1.09700e-06 1.15000e-06 1.30000e-06\n'
-        H += '       2.10000e-06 2.60000e-06 3.30000e-06 4.00000e-06\n'
-        H += '       9.87700e-06 1.59680e-05 4.80520e-05 1.48729e-04\n'
-        H += '       9.11800e-03 4.08500e-02 5.00000e-01 1.35300e+00\n'
-        H += '       3.67900e+00 1.00000e+01\n'
-    H += 'F41:p 41\n'
-    H += 'FS41  21\n'
-    H += 'E41    0.00000e+00 1.00000e-11 1.50000e-08 3.00000e-08\n'
-    H += '       5.00000e-08 8.00000e-08 1.00000e-07 1.40000e-07\n'
-    H += '       1.80000e-07 2.50000e-07 3.20000e-07 4.00000e-07\n'
-    H += '       6.25000e-07 8.50000e-07 9.50000e-07 9.72000e-07\n'
-    H += '       1.02000e-06 1.09700e-06 1.15000e-06 1.30000e-06\n'
-    H += '       2.10000e-06 2.60000e-06 3.30000e-06 4.00000e-06\n'
-    H += '       9.87700e-06 1.59680e-05 4.80520e-05 1.48729e-04\n'
-    H += '       9.11800e-03 4.08500e-02 5.00000e-01 1.35300e+00\n'
-    H += '       3.67900e+00 1.00000e+01\n'
+    H += 'E21   0.0 0.1 20\n'
     H += '\n'
     return H
 
-def remove(filename):
-    try:
-        os.remove(filename)
-    except OSError:
-        pass
+def remove(fname):
+    print fname
+    names = ['{}{}'.format(path,fname), '{}{}o'.format(path,fname), '{}{}r'.format(path,fname)]
+    for name in names:
+        try:
+            os.remove(name)
+        except OSError:
+            pass
         
-def readTotalGamma(filename):
+def readGamma(filename):
     f = open(filename).readlines()
     for i, line in enumerate(f):
         if '1tally       21' in line:
-            number = float(f[i+10].split()[0])
-    return number
+            nFastG = float(f[i+17].split()[1])
+            totalGamma = float(f[i+18].split()[1])
+    return nFastG, totalGamma
+
+def readNeutron(filename):
+    f = open(filename).readlines()
+    
+    for i, line in enumerate(f):
+        if '1tally       11' in line:
+            nFastN = float(f[i+17].split()[1])
+            totalNeutrons = float(f[i+18].split()[1])
+        if '1tally       21' in line:
+            nFastG = float(f[i+17].split()[1])
+            totalGamma = float(f[i+18].split()[1])
+    return nFastN, totalNeutrons, nFastG, totalGamma
+    
+    
 
 def name(blocks):
     s = ''
@@ -214,22 +211,29 @@ def name(blocks):
         s += '{}'.format(b)
     return s
 
-#here you'll input all of the parameter you want to create the input files you need
-#particle types
-part = ['p']
-
-allBlocks = [[1,2,3,4]]
-             
-
-#this will loop through the above lists to create the desired mcnp input files
-for blocks in allBlocks:
-    for par in part:
+def dec2hex(num):
+    if num == 0:
+        return 0
+    ans = ""
+    while num > 0:
+        ans = str(num%3) + ans
+        num /= 3
+    return int(ans)
+    
+def makeList(num):
+    n = dec2hex(num)
+    L = [0] * (10 - len(str(n)))
+    L += [int(d) for d in str(n)]
+    return [l + 1 for l in L]
+   
+def run(blocks, width):
+    for par in ['n', 'p']:
         #the next line will title the mcnp input file
         s = 'TRIGA BEAMPORT {} Shield, Thickness {}\n'.format(name(blocks), len(blocks))
         #calls the Block1 function to produce cell cards for input file            
         s += Block1(blocks)
         #write surface cards            
-        s += Block2(blocks)
+        s += Block2(blocks, width)
         #write information in Block 3            
         s += Block3(par, blocks)
         s += Source(par)
@@ -237,17 +241,50 @@ for blocks in allBlocks:
         #give the file a name
         fname = 'mat{}{}.i'.format(name(blocks), par) 
         # Remove any files already present with the same name
-        remove('output/{}'.format(fname))
-        remove('output/{}o'.format(fname))
-        remove('output/{}r'.format(fname))
+        remove(fname)
         #create file in output folder and write to file
-        with open('output/{}'.format(fname), 'w') as H:
+        with open('{}{}'.format(path, fname), 'w') as H:
             H.write(s)
-        subprocess.call('mcnp6 name=output/{}'.format(fname), shell=True)
+            
+        subprocess.call('mcnp6 name={}{}'.format(path, fname), shell=True)
         
         if par == 'p':
-            total_gamma = readTotalGamma('output/{}o'.format(fname))
+            fastG, totG = readGamma('{}{}o'.format(path, fname))
+        else:
+            fastN, totN, fastG2, totG2 = readNeutron('{}{}o'.format(path,fname))
+            
+        # Remove any files already present with the same name
         
+        #remove(fname)
+    return fastN, totN, fastG+fastG2, totG+totG2
+
+#here you'll input all of the parameter you want to create the input files you need
+#particle types
+task = os.environ['SGE_TASK_ID']
+task = int(task) - 1
+
+path = os.environ['JOB_NAME'] + '/'
+
+# Create the output folder if needed
+try:
+    os.mkdir(path[:-1])
+except OSError:
+    pass
+    
+print path
+
+allBlocks = [makeList(task)]
+            # 2244222445
+width = float(path[-3:-1]) / 10
+
+print width
+
+#this will loop through the above lists to create the desired mcnp input files
+for blocks in allBlocks:
+    output = run(blocks, width)
+    with open('{}{}'.format(path, name(blocks)), 'w') as f:
+        f.write('{} {} {} {}'.format(*output))
+         
         
         
         
