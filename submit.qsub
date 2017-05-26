@@ -1,0 +1,43 @@
+#!/bin/bash
+
+## Specify the amount fo RAM needed _per_core_. Default is 1G
+#$ -l mem=1G
+
+## Specify the maximum runtime.  Default is 1 hour (1:00:00)
+#$ -l h_rt=001:00:00
+
+## Require the use of infiniband.
+##$ -l ib=TRUE
+
+## Allow variable core assignment
+#$ -binding linear
+
+## Run on Specific Queue
+##$ -q batch.q@@elves
+##$ -q batch.q@@dwarves
+
+## Parallel environment.
+#$ -pe single 1
+##$ -pe single 20
+##$ -pe mpi-1 2
+##$ -pe mpi-fill 80
+##$ -pe mpi-spread "80-200"
+
+## Use the current working directory instead of your home directory
+#$ -cwd
+
+## Send email upon (b)eginning, (e)nd, (a)bort
+##$ -M rlreed@ksu.edu -m a
+
+## Name my job, to make it easier to find in the queue
+#$ -N radshield15
+
+## Submit an Array job with environment variable $SGE_TASK_ID
+## Line sets variable with min:max:step
+#$ -t 1-59049
+
+## Merge output and error text treams into a single stream
+#$ -j y
+#$ -o /dev/null
+
+$HOME/opt/conda/bin/python ~/triga_bp_shield/shld_writer.py
