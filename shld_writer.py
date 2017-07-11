@@ -277,6 +277,11 @@ def run(blocks, width):
 #here you'll input all of the parameter you want to create the input files you need
 #particle types
 
+#task = os.environ['SGE_TASK_ID']
+#task = int(task) - 1
+
+#path = os.environ['JOB_NAME'] + '/'
+
 for path in ['best30/']:
     for task in xrange(59049):
         # Skip if not for the current process
@@ -289,15 +294,14 @@ for path in ['best30/']:
         except OSError:
             pass
             
-        allBlocks = [makeList(task)]
+        blocks = makeList(task)
                     # 2244222445
         width = float(path[-3:-1]) / 10
 
         #this will loop through the above lists to create the desired mcnp input files
-        for blocks in allBlocks:
-            output = run(blocks, width)
-            with open('{}{}'.format(path, name(blocks)), 'w') as f:
-                f.write('{} {} {} {}'.format(*output))
+        output = run(blocks, width)
+        with open('{}{}'.format(path, name(blocks)), 'w') as f:
+            f.write('{} {} {} {}'.format(*output))
          
         
         
