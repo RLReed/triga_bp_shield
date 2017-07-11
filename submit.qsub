@@ -4,7 +4,7 @@
 #$ -l mem=1G
 
 ## Specify the maximum runtime.  Default is 1 hour (1:00:00)
-#$ -l h_rt=001:00:00
+#$ -l h_rt=004:00:00
 
 ## Require the use of infiniband.
 ##$ -l ib=TRUE
@@ -30,11 +30,12 @@
 ##$ -M rlreed@ksu.edu -m a
 
 ## Name my job, to make it easier to find in the queue
-#$ -N radshield15
+#$ -N radshield30
 
 ## Submit an Array job with environment variable $SGE_TASK_ID
 ## Line sets variable with min:max:step
 #$ -t 1-59049
+##$ -t 1-2
 
 ## Merge output and error text treams into a single stream
 #$ -j y

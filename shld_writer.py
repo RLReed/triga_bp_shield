@@ -8,6 +8,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import subprocess
 import os
+import sys
+from io import StringIO
+import mpi4py.MPI
+size = mpi4py.MPI.COMM_WORLD.Get_size()
+rank = mpi4py.MPI.COMM_WORLD.Get_rank()
 
 #create output folder
 #try:
@@ -26,6 +31,18 @@ density = [0.0, 1.000, 11.34, 19.3,]
 label = ['VOID', 'Borated Polyethylene', 'Lead', 'Tungsten']
 abrev = ['VOID', 'bp', 'pb', 'w']
 nMat = len(label) - 1
+
+class Capturing(list):
+    '''
+    This will capture stdout and redirect
+    '''
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
+    def __exit__(self, *args):
+        self.extend(self._stringio.getvalue().splitlines())
+        sys.stdout = self._stdout
 
 def Block1(blocks):
     '''
@@ -176,7 +193,6 @@ def Tally(particle):
     return H
 
 def remove(fname):
-    print fname
     names = ['{}{}'.format(path,fname), '{}{}o'.format(path,fname), '{}{}r'.format(path,fname)]
     for name in names:
         try:
@@ -247,7 +263,7 @@ def run(blocks, width):
         with open('{}{}'.format(path, fname), 'w') as H:
             H.write(s)
             
-        subprocess.call('mcnp6 name={}{}'.format(path, fname), shell=True)
+        subprocess.call('mcnp6 name={}{}'.format(path, fname), shell=True, stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
         
         if par == 'p':
             fastG, totG = readGamma('{}{}o'.format(path, fname))
@@ -260,30 +276,28 @@ def run(blocks, width):
 
 #here you'll input all of the parameter you want to create the input files you need
 #particle types
-task = os.environ['SGE_TASK_ID']
-task = int(task) - 1
 
-path = os.environ['JOB_NAME'] + '/'
+for path in ['best30/']:
+    for task in xrange(59049):
+        # Skip if not for the current process
+        if (task % size) != rank: continue
+        print "Task {}{} being done by processor {} of {}".format(path, task, rank + 1, size)
+        
+        # Create the output folder if needed
+        try:
+            os.mkdir(path[:-1])
+        except OSError:
+            pass
+            
+        allBlocks = [makeList(task)]
+                    # 2244222445
+        width = float(path[-3:-1]) / 10
 
-# Create the output folder if needed
-try:
-    os.mkdir(path[:-1])
-except OSError:
-    pass
-    
-print path
-
-allBlocks = [makeList(task)]
-            # 2244222445
-width = float(path[-3:-1]) / 10
-
-print width
-
-#this will loop through the above lists to create the desired mcnp input files
-for blocks in allBlocks:
-    output = run(blocks, width)
-    with open('{}{}'.format(path, name(blocks)), 'w') as f:
-        f.write('{} {} {} {}'.format(*output))
+        #this will loop through the above lists to create the desired mcnp input files
+        for blocks in allBlocks:
+            output = run(blocks, width)
+            with open('{}{}'.format(path, name(blocks)), 'w') as f:
+                f.write('{} {} {} {}'.format(*output))
          
         
         

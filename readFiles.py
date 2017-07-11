@@ -56,17 +56,17 @@ def makePlots(L):
     fastToTotalN = fastN / totalN
     neutronToGamma = fastN / fastG
     m = 0.1
-    rgb = [r + [totalN[i]/m] for i, r in enumerate(rgb)]
+    faded = False
+    rgb = [r + ([totalN[i]/m] if faded else [1.0]) for i, r in enumerate(rgb)]
+    
+    mask = neutronToGamma > 1.0
+    
     try:
-        mask = fastToTotalN > 0.95
-        x = np.where(mask)[0][np.argmax(neutronToGamma[mask])]
-        print "0.95", fastToTotalN[x], neutronToGamma[x], names[x]
-    except:
-        pass
-    try:
-        mask = fastToTotalN > 0.975
-        x = np.where(mask)[0][np.argmax(neutronToGamma[mask])]
-        print "0.975", fastToTotalN[x], neutronToGamma[x], names[x]
+        mask = neutronToGamma > 1.0
+        mask *= neutronToGamma < 2.0
+        mask *= fastToTotalN < 1.0
+        x = np.where(mask)[0][np.argmax(fastToTotalN[mask])]
+        print "0.95", fastToTotalN[x], neutronToGamma[x], names[x], int(str(int(names[x])-1111111111), 3)
     except:
         pass
 
@@ -94,5 +94,5 @@ def makePlots(L):
     except ValueError:
         return
     
-for l in [15, 20, 30]:
+for l in [10, 15, 20, 30]:
     makePlots(l)
