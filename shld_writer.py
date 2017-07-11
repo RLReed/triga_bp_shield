@@ -25,6 +25,7 @@ import os
 density = [0.0, 1.000, 11.34, 19.3,]
 label = ['VOID', 'Borated Polyethylene', 'Lead', 'Tungsten']
 abrev = ['VOID', 'bp', 'pb', 'w']
+nMat = len(label) - 1
 
 def Block1(blocks):
     '''
@@ -216,8 +217,8 @@ def dec2hex(num):
         return 0
     ans = ""
     while num > 0:
-        ans = str(num%3) + ans
-        num /= 3
+        ans = str(num%nMat) + ans
+        num /= nMat
     return int(ans)
     
 def makeList(num):
@@ -254,8 +255,7 @@ def run(blocks, width):
             fastN, totN, fastG2, totG2 = readNeutron('{}{}o'.format(path,fname))
             
         # Remove any files already present with the same name
-        
-        #remove(fname)
+        remove(fname)
     return fastN, totN, fastG+fastG2, totG+totG2
 
 #here you'll input all of the parameter you want to create the input files you need

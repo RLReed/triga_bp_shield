@@ -25,7 +25,9 @@ def makePlots(L):
     rgb = []
     names = []
 
-    for filename in os.listdir(path):
+    for i, filename in enumerate(os.listdir(path)):
+        if i % 10 == 0:
+            print i
         try:
             int(filename)
         except ValueError:
@@ -55,10 +57,18 @@ def makePlots(L):
     neutronToGamma = fastN / fastG
     m = 0.1
     rgb = [r + [totalN[i]/m] for i, r in enumerate(rgb)]
-    mask = fastToTotalN > 0.95
-    x = np.where(mask)[0][np.argmax(neutronToGamma[mask])]
-    print fastToTotalN[x], neutronToGamma[x], names[x], names[x]
-    adsf
+    try:
+        mask = fastToTotalN > 0.95
+        x = np.where(mask)[0][np.argmax(neutronToGamma[mask])]
+        print "0.95", fastToTotalN[x], neutronToGamma[x], names[x]
+    except:
+        pass
+    try:
+        mask = fastToTotalN > 0.975
+        x = np.where(mask)[0][np.argmax(neutronToGamma[mask])]
+        print "0.975", fastToTotalN[x], neutronToGamma[x], names[x]
+    except:
+        pass
 
     for i in range(1,len(materials)+1):
         plt.figure(i)
@@ -70,7 +80,7 @@ def makePlots(L):
     plt.figure(0)
     plt.scatter(fastToTotalN, neutronToGamma, c=rgb, s=0.5)
     #plt.legend(materials, loc=0)
-    plt.title('color is the most common material in {} cm shield'.format(name[-2:]))
+    #plt.title('color is the most common material in {} cm shield'.format(name[-2:]))
     plt.xlabel('Fast to Total N ratio')
     plt.ylabel('Neutron to Gamma Ratio')
     plt.grid(True)
